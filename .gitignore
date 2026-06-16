@@ -1,0 +1,74 @@
+# =========================
+# Python
+# =========================
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+
+.venv/
+venv/
+env/
+
+# =========================
+# Logs
+# =========================
+
+*.log
+*.jsonl
+
+logs/
+
+log.jsonl
+
+# =========================
+# IDE
+# =========================
+
+.vscode/
+.idea/
+
+# =========================
+# OS
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+# Secrets
+# =========================
+
+.env
+.env.*
+
+config.local.json
+secret.json
+credentials.json
+
+# =========================
+# Generated files
+# =========================
+
+*.tmp
+*.bak
+
+generated/
+
+# =========================
+# Cardputer
+# =========================
+
+.build/
+dist/
+firmware.bin
+
+# PlatformIO
+
+.pio/
+
+# Arduino
+
+*.ino.bin
