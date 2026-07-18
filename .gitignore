@@ -5,6 +5,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 
 # Virtual Environment
 
@@ -43,6 +44,7 @@ Thumbs.db
 
 .env
 .env.*
+.testenv
 
 config.local.json
 secret.json
