@@ -1,6 +1,7 @@
 import asyncio
 import json
 import websockets
+import os
 
 from websockets.exceptions import ConnectionClosed
 
@@ -11,8 +12,17 @@ async def receive_loop(ws,idle_event,stop_event):
         async for raw in ws:
             event=json.loads(raw)
             event_type=event.get("type")
+              
+            if event_type=="auth.ready":
+                print("\n[Authenticated]")
 
-            if event_type=="status.changed":
+            elif event_type=="session.ready":
+                version=event.get("protocolversion")
+                if version != protocol.p_version:
+                    print(f"\n[Error] Unsupported protocol version: {version}")
+                    return
+
+            elif event_type=="status.changed":
                 status=event.get("status")
                 print(f"\n[Event] {event}")
                 if status == "idle":
@@ -62,7 +72,16 @@ async def main():
     stop_event=asyncio.Event()
 
     try:
+        token=os.getenv("AGENTDECK_TOKEN")
+        if not token:
+            print(
+                "[Configuration Error] "
+                "AGENTDECK_TOKEN is not set"
+            )
+            return
+        
         async with websockets.connect("ws://localhost:8000/ws") as ws:
+            await ws.send(json.dumps(protocol.auth_login(token),ensure_ascii=False))
             recv_task=asyncio.create_task(receive_loop(ws,idle_event,stop_event))
 
             try:

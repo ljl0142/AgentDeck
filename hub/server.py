@@ -1,4 +1,6 @@
 import json
+import os
+import secrets
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -8,6 +10,10 @@ from hub import protocol
 
 
 session=AgentSession("ws://localhost:8765/ws")
+
+AGENTDECK_TOKEN=os.getenv("AGENTDECK_TOKEN")
+if not AGENTDECK_TOKEN:
+    raise RuntimeError("AGENTDECK_TOKEN environment variable is not set")
 
 
 @asynccontextmanager
@@ -37,13 +43,60 @@ async def health():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket:WebSocket):
     await websocket.accept()
-    await session.add_client(websocket)
+    authenticated=False
 
     try:
         while True:
             message=await websocket.receive_json()
             message_type=message.get("type")
-            if message_type=="message.send":
+
+            if not authenticated:
+                if message_type!="auth.login":
+                    await websocket.send_json(
+                        protocol.error_message(
+                            "AUTH_REQUIRED",
+                            "Authentication is required",
+                        )
+                    )
+                    continue
+
+                token=message.get("token")
+
+                if not isinstance(token,str) or not token:
+                    await websocket.send_json(
+                        protocol.error_message(
+                             "INVALID_MESSAGE",
+                            "token must be a non-empty string",
+                        )
+                    )
+                    continue
+
+                if not secrets.compare_digest(token,AGENTDECK_TOKEN):
+                    await websocket.send_json(
+                        protocol.error_message(
+                            "AUTH_FAILED",
+                            "Invalid token",
+                        )
+                    )
+                    await websocket.close(code=1008,reason="Authentication failed")
+                    return
+                
+                authenticated=True
+
+                await websocket.send_json(protocol.auth_ready())
+                await session.add_client(websocket)
+
+                continue
+
+            if message_type=="auth.login":    
+                await websocket.send_json(
+                    protocol.error_message(
+                        "ALREADY_AUTHENTICATED",
+                        "Client is already authenticated",
+                    )
+                )
+
+            elif message_type=="message.send":
                 text=message.get("text","")
                 try:
                     await session.send_message(text)
@@ -68,7 +121,7 @@ async def websocket_endpoint(websocket:WebSocket):
                 )
 
             elif message_type=="ping":
-                await websocket.send_json(protocol.ping())
+                await websocket.send_json(protocol.pong())
 
             else:
                 await websocket.send_json(
@@ -77,9 +130,10 @@ async def websocket_endpoint(websocket:WebSocket):
                         f"Unknown type: {message_type}"
                     )
                 )
-                
+
     except WebSocketDisconnect:
         pass
 
     finally:
-        session.remove_client(websocket)
+        if authenticated:
+            session.remove_client(websocket)

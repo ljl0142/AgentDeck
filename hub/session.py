@@ -56,14 +56,27 @@ class AgentSession:
             raise RuntimeError("Another turn is active")
         
         self.status="active"
-
+        
+        await self.broadcast(protocol.message_sent(text))
         await self.broadcast(protocol.status_changed("active"))
 
         try:
             await self.codex.send_message(self.thread_id,text)
 
-        except Exception:
+        except Exception as error:
             self.status="error"
+
+            await self.broadcast(
+                protocol.error_message(
+                    "CODEX_REQUEST_FAILED",
+                    str(error),
+                )
+            )
+
+            await self.broadcast(
+                protocol.status_changed("error")
+            )
+            
             raise
 
 
