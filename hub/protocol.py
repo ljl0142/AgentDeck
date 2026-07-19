@@ -1,5 +1,5 @@
 from typing import Any
-p_version=1
+PROTOCOL_VERSION=1
 
 #WEB -> HUB
 def message_send(text:str) -> dict[str,Any]:
@@ -15,16 +15,16 @@ def status_get() -> dict[str,Any]:
     }
 
 
-def pong() -> dict[str,Any]:
+def ping() -> dict[str,Any]:
     return {
-        "type":"pong",
+        "type":"ping",
     }
 
 #HUB -> WEB
 def session_ready(thread_id:str) -> dict[str,Any]:
     return {
         "type":"session.ready",
-        "protocolversion":p_version,
+        "protocolversion":PROTOCOL_VERSION,
         "threadId":thread_id,
     }
 
@@ -87,6 +87,12 @@ def error_message(
         "type":"error",
         "code":code,
         "message":message,
+    }
+
+
+def pong() -> dict[str,Any]:
+    return {
+        "type":"pong",
     }
 
 

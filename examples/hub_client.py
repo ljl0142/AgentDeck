@@ -18,7 +18,7 @@ async def receive_loop(ws,idle_event,stop_event):
 
             elif event_type=="session.ready":
                 version=event.get("protocolversion")
-                if version != protocol.p_version:
+                if version != protocol.PROTOCOL_VERSION:
                     print(f"\n[Error] Unsupported protocol version: {version}")
                     return
 
@@ -43,7 +43,7 @@ async def receive_loop(ws,idle_event,stop_event):
             elif event_type=="command.completed":
                 print(
                     f"\n[ExitCode]"
-                    f"{event.get("exitCode")}"
+                    f"{event.get('exitCode')}"
                 )
 
             elif event_type=="turn.completed":
